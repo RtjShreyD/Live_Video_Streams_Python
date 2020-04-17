@@ -1,0 +1,66 @@
+ref link--> https://www.youtube.com/watch?v=nKyGCYgoxOc
+
+Api Gateway-->websocket api build-->create lambda function with create new role for the 1st time
+--->create dynamodb-->create policy for dynamo access for lambda function
+---> save lambda function-->configure connect route of websocket api with the lambda fn name
+--->save route integration-->Deploy websocket API
+-->Use the websocket url to connect with the socket, using wscat and terminal
+--->Connected msg appears and clientid stores in dynamodb.
+Similarly do for the disconnect route.
+
+*****************************************************************************************************************************
+#### Lambda basic _onConnect
+
+import json
+import boto3
+import botocore
+
+def lambda_handler(event, context):
+    connectionId=event["requestContext"]["connectionId"]
+    clientid=event["queryStringParameters"]["clientid"]
+    dynamo=boto3.resource('dynamodb').Table("<dynamodb table name>")
+    jsonobj={"ClientID":clientid, "token":connectionId}
+    dynamo.put_item(Item=jsonobj)
+    
+    return {
+        "isBase64Encoded":False,
+        "statusCode":200,
+        "headers":{"status":"success"},
+        "body":"success"
+    }
+
+*****************************************************************************************************************************    
+####Lambda basic _onDisconnect
+
+import json
+import boto3
+import botocore
+
+def lambda_handler(event, context):
+    connectionId=event["requestContext"]["connectionId"]
+    clientid=event["queryStringParameters"]["clientid"]
+    dynamo=boto3.resource('dynamodb').Table("OnlineConnection")
+    dynamo.delete_item(Key={"token":connectionId})
+
+*****************************************************************************************************************************
+Now for other routes create lambda.py(Sample available here) on laptop, in a virtual env with all packages installed.
+Next in the lib>python>site-packages folder of venv copy the lambda.py.
+Next zip all the contents of site-packages using command `zip -r lam.zip .` from inside site-packages dir.
+Now upload this lam.zip file to AWS s3 via awscli using command `aws s3 cp lam.zip s3://<bucket-name>/` and
+from there get copy the url of it.
+Now on AWS lambda create a new lambda function and in Function code block on webpage, upload the file from s3. Click Save.
+In the Environment Variables column on Lambda webpage, access_key and secret_key,
+should be input for your acount form IAM console.
+After lambda gets updated, create a new route at the API Gateway, and integrate the lambda function with it.
+Now finally depoy the API and use wscat like servie to connect with the socket url shown after deployment
+by passing the query parameter of clientid as shown below on two terminals with diff clientid
+
+`wscat -c  wss://1qh6rc38y1.execute-api.us-east-1.amazonaws.com/dev?clientid=rtj`.
+
+Note: Make sure of the permissions and policies for lambda, recommended that while creating a new Lambda,
+let it create a new role automatically, so that you can later add permissions and policies to it from IAM console.
+
+Once connected in two terminals
+
+{"Msg":"Hey how are you??","ReceiverID":"rtj","action":"sendmsg"}
+******************************************************************************************************************************
