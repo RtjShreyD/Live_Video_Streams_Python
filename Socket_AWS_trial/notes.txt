@@ -1,4 +1,12 @@
-ref link--> https://www.youtube.com/watch?v=nKyGCYgoxOc
+ref link--> https://www.youtube.com/watch?v=nKyGCYgoxOc (part 1)
+
+https://www.youtube.com/watch?v=YRLNdOI2oRs (part 2)
+
+
+*****************************************************************************************************************************
+Services used---> API Gateway, Lambda, Dynamodb, CloudWatchLogs, s3
+*****************************************************************************************************************************
+
 
 Api Gateway-->websocket api build-->create lambda function with create new role for the 1st time
 --->create dynamodb-->create policy for dynamo access for lambda function
@@ -55,7 +63,7 @@ After lambda gets updated, create a new route at the API Gateway, and integrate 
 Now finally depoy the API and use wscat like servie to connect with the socket url shown after deployment
 by passing the query parameter of clientid as shown below on two terminals with diff clientid
 
-`wscat -c  wss://1qh6rc38y1.execute-api.us-east-1.amazonaws.com/dev?clientid=rtj`.
+`wscat -c  wss://<websocket url from AWS>/dev?clientid=rtj`.
 
 Note: Make sure of the permissions and policies for lambda, recommended that while creating a new Lambda,
 let it create a new role automatically, so that you can later add permissions and policies to it from IAM console.
