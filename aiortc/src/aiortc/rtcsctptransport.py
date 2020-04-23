@@ -680,6 +680,15 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         return self.transport.transport.role != "controlling"
 
     @property
+    def maxChannels(self) -> Optional[int]:
+        """
+        The maximum number of :class:`RTCDataChannel`s that can be used simultaneously.
+        """
+        if self._inbound_streams_count:
+            return min(self._inbound_streams_count, self._outbound_streams_count)
+        return None
+
+    @property
     def port(self) -> int:
         """
         The local SCTP port number used for data channels.
@@ -832,7 +841,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         # verify tag
         if verification_tag != expected_tag:
             self.__log_debug(
-                f"Bad verification tag {verification_tag} vs {expected_tag}"
+                "Bad verification tag %d vs %d", verification_tag, expected_tag
             )
             return
 
@@ -913,7 +922,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         """
         Handle an incoming chunk.
         """
-        self.__log_debug(f"< {chunk}")
+        self.__log_debug("< %s", chunk)
 
         # common
         if isinstance(chunk, DataChunk):
@@ -960,8 +969,9 @@ class RTCSctpTransport(AsyncIOEventEmitter):
             self._get_extensions(chunk.params)
 
             self.__log_debug(
-                f"- Peer supports {chunk.outbound_streams} outbound streams, "
-                f"{chunk.inbound_streams} max inbound streams"
+                "- Peer supports %d outbound streams, %d max inbound streams",
+                chunk.outbound_streams,
+                chunk.inbound_streams,
             )
             self._inbound_streams_count = min(
                 chunk.outbound_streams, self._inbound_streams_max
@@ -1021,8 +1031,9 @@ class RTCSctpTransport(AsyncIOEventEmitter):
             self._get_extensions(chunk.params)
 
             self.__log_debug(
-                f"- Peer supports {chunk.outbound_streams} outbound streams, "
-                f"{chunk.inbound_streams} max inbound streams"
+                "- Peer supports %d outbound streams, %d max inbound streams",
+                chunk.outbound_streams,
+                chunk.inbound_streams,
             )
             self._inbound_streams_count = min(
                 chunk.outbound_streams, self._inbound_streams_max
@@ -1219,7 +1230,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         """
         Handle a RE-CONFIG parameter.
         """
-        self.__log_debug(f"<< {param}")
+        self.__log_debug("<< %s", param)
 
         if isinstance(param, StreamResetOutgoingParam):
             # mark closed inbound streams
@@ -1324,7 +1335,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         """
         Transmit a chunk (no bundling for now).
         """
-        self.__log_debug(f"> {chunk}")
+        self.__log_debug("> %s", chunk)
         await self.__transport._send_data(
             serialize_packet(
                 self._local_port,
@@ -1342,7 +1353,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
                 break
         chunk.params.append((param_type, bytes(param)))
 
-        self.__log_debug(f">> {param}", param)
+        self.__log_debug(">> %s", param)
         await self._send_chunk(chunk)
 
     async def _send_sack(self):
@@ -1375,7 +1386,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         Transition the SCTP association to a new state.
         """
         if state != self._association_state:
-            self.__log_debug(f"- {self._association_state} -> {state}")
+            self.__log_debug("- %s -> %s", self._association_state, state)
             self._association_state = state
 
         if state == self.State.ESTABLISHED:
@@ -1402,7 +1413,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
 
     def _t1_cancel(self) -> None:
         if self._t1_handle is not None:
-            self.__log_debug(f"- T1({chunk_type(self._t1_chunk)}) cancel")
+            self.__log_debug("- T1(%s) cancel", chunk_type(self._t1_chunk))
             self._t1_handle.cancel()
             self._t1_handle = None
             self._t1_chunk = None
@@ -1411,7 +1422,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         self._t1_failures += 1
         self._t1_handle = None
         self.__log_debug(
-            f"x T1({chunk_type(self._t1_chunk)}) expired {self._t1_failures}"
+            "x T1(%s) expired %d", chunk_type(self._t1_chunk), self._t1_failures
         )
         if self._t1_failures > SCTP_MAX_INIT_RETRANS:
             self._set_state(self.State.CLOSED)
@@ -1423,12 +1434,12 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         assert self._t1_handle is None
         self._t1_chunk = chunk
         self._t1_failures = 0
-        self.__log_debug(f"- T1({chunk_type(self._t1_chunk)}) start")
+        self.__log_debug("- T1(%s) start", chunk_type(self._t1_chunk))
         self._t1_handle = self._loop.call_later(self._rto, self._t1_expired)
 
     def _t2_cancel(self) -> None:
         if self._t2_handle is not None:
-            self.__log_debug(f"- T2({chunk_type(self._t2_chunk)}) cancel")
+            self.__log_debug("- T2(%s) cancel", chunk_type(self._t2_chunk))
             self._t2_handle.cancel()
             self._t2_handle = None
             self._t2_chunk = None
@@ -1437,7 +1448,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         self._t2_failures += 1
         self._t2_handle = None
         self.__log_debug(
-            f"x T2({chunk_type(self._t2_chunk)}) expired {self._t2_failures}"
+            "x T2(%s) expired %d", chunk_type(self._t2_chunk), self._t2_failures
         )
         if self._t2_failures > SCTP_MAX_ASSOCIATION_RETRANS:
             self._set_state(self.State.CLOSED)
@@ -1449,7 +1460,7 @@ class RTCSctpTransport(AsyncIOEventEmitter):
         assert self._t2_handle is None
         self._t2_chunk = chunk
         self._t2_failures = 0
-        self.__log_debug(f"- T2({chunk_type(self._t2_chunk)}) start")
+        self.__log_debug("- T2(%s) start", chunk_type(self._t2_chunk))
         self._t2_handle = self._loop.call_later(self._rto, self._t2_expired)
 
     @no_type_check
@@ -1647,11 +1658,10 @@ class RTCSctpTransport(AsyncIOEventEmitter):
             # register channel if necessary
             stream_id = channel.id
             if stream_id is None:
-                while self._data_channel_id in self._data_channels:
-                    self._data_channel_id += 2
                 stream_id = self._data_channel_id
+                while stream_id in self._data_channels:
+                    stream_id += 2
                 self._data_channels[stream_id] = channel
-                self._data_channel_id += 2
                 channel._setId(stream_id)
 
             # send data
