@@ -7,7 +7,7 @@ Install -  <br />
     `sudo apt-get install python3-venv` <br />
 Make -  <br />
     `python3 -m venv rtc_env` <br />
-    `source rtc_env/bin/activate.sh` <br />
+    `source rtc_env/bin/activate` <br />
     `pip install -U pip` <br />
 
 2. Install AIORTC, AIOHTTP and opencv: <br />

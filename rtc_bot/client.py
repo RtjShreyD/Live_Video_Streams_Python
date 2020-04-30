@@ -11,7 +11,8 @@ async def connect():
     # ws = Websocket("http://localhost:8080/ws")
     # ws = Websocket("https://rtcbot.dev/myRandomSequence1532")
     # ws = Websocket("http://13.127.250.133:8080/ws")
-    ws = Websocket("http://localhost:8080/xyz")  # xyz could be the remote device id, in multi_client mode.
+    # ws = Websocket("http://localhost:8080/xyz")  # xyz could be the remote device id, in multi_client mode.
+    ws = Websocket("http://13.127.250.133:1452/xyz001")
     remoteDescription = await ws.get()
     robotDescription = await conn.getLocalDescription(remoteDescription)
     ws.put_nowait(robotDescription)
