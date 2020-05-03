@@ -5,13 +5,8 @@ cam = CVCamera()
 conn = RTCConnection()
 conn.video.putSubscription(cam)
 
-# Connect establishes a websocket connection to the server,
-# and uses it to send and receive info to establish webRTC connection.
 async def connect():
-    # ws = Websocket("http://localhost:8080/ws")
-    # ws = Websocket("https://rtcbot.dev/myRandomSequence1532")
-    # ws = Websocket("http://13.127.250.133:8080/ws")
-    #ws = Websocket("http://localhost:8080/xyz")  # xyz could be the remote device id, in multi_client mode.
+    #ws = Websocket("http://localhost:8080/xyz")
     ws = Websocket("http://13.233.21.7:8080/node2")
     remoteDescription = await ws.get()
     print(remoteDescription)
