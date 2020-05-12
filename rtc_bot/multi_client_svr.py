@@ -117,13 +117,13 @@ async def guiHandler(request):
             </p>
             <script>
                 var conn = new rtcbot.RTCConnection();
-
+                console.log("conn defined")
                 conn.subscribe(m => console.log(m));
 
                 conn.video.subscribe(function(stream) {
                     document.querySelector("video").srcObject = stream;
                 });
-
+                                    
                 async function connect() {
                     let offer = await conn.getLocalDescription();
 
@@ -133,7 +133,7 @@ async def guiHandler(request):
                         cache: "no-cache",
                         body: JSON.stringify(offer)
                     });
-
+                    console.log("Connect Awaited ");
                     await conn.setRemoteDescription(await response.json());
 
                     console.log("Ready!");

@@ -6,10 +6,10 @@ conn = RTCConnection()
 conn.video.putSubscription(cam)
 
 async def connect():
-    #ws = Websocket("http://localhost:8080/xyz")
-    ws = Websocket("http://13.233.21.7:8080/node2")
+    ws = Websocket("http://localhost:8080/xyz")
+    #ws = Websocket("http://13.233.21.7:8080/node2")
     remoteDescription = await ws.get()
-    print(remoteDescription)
+    # print(remoteDescription)
     robotDescription = await conn.getLocalDescription(remoteDescription)
     #print(robotDescription)
     ws.put_nowait(robotDescription)
